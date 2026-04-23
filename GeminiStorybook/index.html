@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<!-- AI Generated Frontend for our App-->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FableForge | AI Bedtime Stories</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&family=Solway:wght@400;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Quicksand', 'sans-serif'],
+                        serif: ['Solway', 'serif'],
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-stone-50 font-sans text-slate-800">
+
+    <header class="bg-indigo-900 text-white py-10 px-4 shadow-xl border-b-4 border-amber-400">
+        <div class="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-left">
+            <div>
+                <h1 class="font-serif text-5xl font-bold mb-2">✨ FableForge</h1>
+                <p class="text-indigo-200 text-lg italic">Where your child's name becomes a legend.</p>
+            </div>
+            <button class="bg-amber-400 hover:bg-amber-300 text-indigo-900 px-8 py-3 rounded-2xl font-bold text-lg shadow-lg transition-all transform hover:scale-105 active:scale-95 animate-bounce-subtle">
+                Order Your Book 📖
+            </button>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto py-10 px-4">
+        
+        <section class="bg-white rounded-3xl shadow-lg border border-indigo-50 p-8 mb-12 relative overflow-hidden">
+            <div class="absolute -top-10 -right-10 w-32 h-32 bg-amber-100 rounded-full opacity-50"></div>
+            
+            <h2 class="font-serif text-2xl font-bold text-indigo-900 mb-6 flex items-center">
+                Create a New Tale
+            </h2>
+
+            <form id="storyForm" class="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
+                <div>
+                    <label class="block text-sm font-semibold text-indigo-700 mb-2">The Hero's Name</label>
+                    <input type="text" id="childName" required
+                        class="w-full px-4 py-3 rounded-xl border-2 border-indigo-100 focus:border-amber-400 focus:ring-0 outline-none transition-all"
+                        placeholder="e.g. Ben">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-indigo-700 mb-2">The World to Explore</label>
+                    <select id="genre" required
+                        class="w-full px-4 py-3 rounded-xl border-2 border-indigo-100 focus:border-amber-400 focus:ring-0 outline-none appearance-none bg-white">
+                        <option value="" disabled selected>Choose a genre...</option>
+                        <option value="Adventure">Adventure</option>
+                        <option value="Space Fantasy">Space Fantasy</option>
+                        <option value="Enchanted Forest">Enchanted Forest</option>
+                        <option value="Superhero">Superhero</option>
+                        <option value="Dinosaur Discovery">Dinosaur Discovery</option>
+                        <option value="Undersea Mystery">Undersea Mystery</option>
+                    </select>
+                </div>
+                <div class="md:col-span-2">
+                    <button type="submit" id="submitBtn"
+                        class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-2xl shadow-lg hover:shadow-indigo-200 transition-all transform hover:-translate-y-1 active:scale-95 disabled:opacity-50">
+                        <span id="btnText">✨ Cast the Storytelling Spell</span>
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <section>
+            <div class="flex items-center justify-between mb-8">
+                <h3 class="font-serif text-3xl font-bold text-indigo-900">Your Storybook Library</h3>
+                <span id="storyCount" class="bg-amber-100 text-amber-800 px-4 py-1 rounded-full font-bold text-sm border border-amber-200">
+                    0 Tales
+                </span>
+            </div>
+
+            <div id="storyList" class="grid grid-cols-1 gap-8">
+                <div id="emptyState" class="text-center py-20 bg-stone-100 rounded-3xl border-2 border-dashed border-stone-300">
+                    <p class="text-stone-500 font-medium">Your library is currently empty. Enchant a new story above!</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <style>
+        @keyframes bounce-subtle {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+        .animate-bounce-subtle {
+            animation: bounce-subtle 3s infinite ease-in-out;
+        }
+    </style>
+
+    <script>
+        const storyForm = document.getElementById('storyForm');
+        const storyList = document.getElementById('storyList');
+        const emptyState = document.getElementById('emptyState');
+        const submitBtn = document.getElementById('submitBtn');
+        const btnText = document.getElementById('btnText');
+        
+        let storyCount = 0;
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const response = await fetch('http://localhost:8000/stories');
+                const history = await response.json();
+                history.forEach(item => {
+                    addStoryCard(item.name, item.genre, item.story, item.date);
+                });
+            } catch (err) {
+                console.error("Could not load history:", err);
+            }
+        });
+
+        storyForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('childName').value;
+            const genre = document.getElementById('genre').value;
+
+            submitBtn.disabled = true;
+            btnText.innerText = "🪄 Brewing your magic tale...";
+
+            try {
+                const response = await fetch(`http://localhost:8000/new-story?name=${encodeURIComponent(name)}&genre=${encodeURIComponent(genre)}`);
+                const data = await response.json();
+                if (data.error) throw new Error(data.error);
+                addStoryCard(data.name, data.genre, data.story, new Date().toISOString());
+                storyForm.reset();
+            } catch (err) {
+                alert("The magic failed! Is the server running?");
+            } finally {
+                submitBtn.disabled = false;
+                btnText.innerText = "✨ Cast the Storytelling Spell";
+            }
+        });
+
+        function addStoryCard(name, genre, text, dateStr) {
+            emptyState.classList.add('hidden');
+            const date = new Date(dateStr).toLocaleDateString();
+            const card = document.createElement('div');
+            
+            card.className = "bg-white p-8 rounded-3xl shadow-md border-l-8 border-indigo-500 hover:shadow-xl transition-all relative group cursor-pointer";
+            
+            card.innerHTML = `
+                <div class="mb-4">
+                    <span class="text-xs font-bold uppercase tracking-widest text-indigo-400">${genre}</span>
+                    <h4 class="font-serif text-2xl font-bold text-slate-800">${name}'s Great Quest</h4>
+                </div>
+                <div class="story-content line-clamp-3 text-slate-600 leading-relaxed font-medium mb-6 italic whitespace-pre-line transition-all duration-500">
+                    "${text}"
+                </div>
+                <div class="flex items-center justify-between text-xs text-slate-400 font-bold uppercase tracking-tighter">
+                    <span>Created via FableForge AI • ${date}</span>
+                    <span class="read-more-hint text-indigo-500 group-hover:underline">Click to read more ↓</span>
+                </div>
+            `;
+
+            card.addEventListener('click', () => {
+                const content = card.querySelector('.story-content');
+                const hint = card.querySelector('.read-more-hint');
+                
+                const isCollapsed = content.classList.contains('line-clamp-3');
+                content.classList.toggle('line-clamp-3', !isCollapsed);
+                hint.innerText = isCollapsed ? "Click to collapse ↑" : "Click to read more ↓";
+            });
+            
+            storyList.prepend(card);
+            storyCount++;
+            document.getElementById('storyCount').innerText = `${storyCount} Tales`;
+        }
+    </script>
+</body>
+</html>

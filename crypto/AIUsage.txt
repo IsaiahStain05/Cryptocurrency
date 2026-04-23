@@ -1,0 +1,3 @@
+I used chatgpt 5.4 to help me fix some modal/sweet alert overlay issues
+
+I used chatgpt 5.4 to fix timing/race conditions where modals and sweet alerts would instantly close
